@@ -23,6 +23,8 @@ height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 width, height = 1000, 800  # Default baseline size
     
+kernel = np.ones((5, 5), np.uint8)
+
 screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
 pygame.display.set_caption("Foil Sandbox (OBS Capture Target)")
 
@@ -215,17 +217,23 @@ while run:
                     motion_detected = False
                     stable_frames = 0
                     
-                    turn_delta = cv2.absdiff(reference_gray, gray_blurred)
-                    turn_delta[0:60, :] = 0
-                    turn_delta[0:MARKER_SIZE, 0:MARKER_SIZE] = 0
-                    turn_delta[0:MARKER_SIZE, width-MARKER_SIZE:width] = 0
-                    turn_delta[height-MARKER_SIZE:height, width-MARKER_SIZE:width] = 0
-                    turn_delta[height-MARKER_SIZE:height, 0:MARKER_SIZE] = 0
+                    turn_delta = cv2.cvtColor(warped_frame,  cv2.COLOR_BGR2GRAY)
                     
-                    _, turn_thresh = cv2.threshold(turn_delta, 70, 255, cv2.THRESH_BINARY)
+                    #turn_delta = cv2.absdiff(reference_gray, gray_blurred)
+                    turn_delta[0:60, :] = 255
+                    turn_delta[0:MARKER_SIZE, 0:MARKER_SIZE] = 255
+                    turn_delta[0:MARKER_SIZE, width-MARKER_SIZE:width] = 255
+                    turn_delta[height-MARKER_SIZE:height, width-MARKER_SIZE:width] = 255
+                    turn_delta[height-MARKER_SIZE:height, 0:MARKER_SIZE] = 255
                     
+
+                    turn_delta = cv2.erode(turn_delta, kernel, iterations=5)
+                    
+                    _, turn_thresh_inv = cv2.threshold(turn_delta, 160, 255, cv2.THRESH_BINARY_INV)
+                    turn_thresh = cv2.GaussianBlur(turn_thresh_inv, (7, 7), 0)
                     
                     cv2.imshow("turn_thresh", turn_thresh)
+                    print("works")
                     
                     
                     best_cell = None
