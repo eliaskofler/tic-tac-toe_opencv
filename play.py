@@ -19,8 +19,9 @@ if not cap.isOpened():
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-if width == 0 or height == 0:
-    width, height = 800, 600  # Default baseline size
+#if width == 0 or height == 0:
+
+width, height = 1000, 800  # Default baseline size
     
 screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
 pygame.display.set_caption("Foil Sandbox (OBS Capture Target)")
@@ -223,6 +224,10 @@ while run:
                     
                     _, turn_thresh = cv2.threshold(turn_delta, 70, 255, cv2.THRESH_BINARY)
                     
+                    
+                    cv2.imshow("turn_thresh", turn_thresh)
+                    
+                    
                     best_cell = None
                     max_ink_density = 0
                     
@@ -234,7 +239,7 @@ while run:
                                 
                                 # 2. Resize to 32x32 to match your model's input size
                                 cell_resized = cv2.resize(cell_roi, (32, 32))
-                                
+                                                                
                                 # 3. Reshape to (1, 32, 32, 1) -> Batch, Height, Width, Channel
                                 cell_input = cell_resized.reshape(1, 32, 32, 1).astype(np.float32) / 255.0
                                 
