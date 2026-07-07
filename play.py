@@ -4,10 +4,11 @@ import numpy as np
 import time
 import random
 import sys
-import keras
-
+import tensorflow as tf
+import cv2
 
 pygame.init()
+model = tf.keras.models.load_model("data/model.keras")
 
 cap = cv2.VideoCapture(2)
 
@@ -228,11 +229,23 @@ while run:
                     for r in range(3):
                         for c in range(3):
                             if board[r][c] == "":
+                                # 1. Crop the cell region of interest
                                 cell_roi = turn_thresh[r*cell_h : (r+1)*cell_h, c*cell_w : (c+1)*cell_w]
-                                ink_density = cv2.countNonZero(cell_roi)
                                 
-                                if ink_density > max_ink_density and ink_density > 800:
-                                    max_ink_density = ink_density
+                                # 2. Resize to 32x32 to match your model's input size
+                                cell_resized = cv2.resize(cell_roi, (32, 32))
+                                
+                                # 3. Reshape to (1, 32, 32, 1) -> Batch, Height, Width, Channel
+                                cell_input = cell_resized.reshape(1, 32, 32, 1).astype(np.float32) / 255.0
+                                
+                                # 4. Run prediction
+                                predictions = model.predict(cell_input, verbose=0) # verbose=0 keeps terminal clean
+                                x_confidence = predictions[0][1] 
+                                                                
+                                # 5. Check if this is the strongest "X" we've seen so far
+                                # (e.g., must be higher than previous max and at least 70% confident)
+                                if x_confidence > max_ink_density and x_confidence > 0.70:
+                                    max_ink_density = x_confidence
                                     best_cell = (r, c)
                     
                     if best_cell:
