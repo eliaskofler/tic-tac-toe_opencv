@@ -5,6 +5,8 @@ Must be constructed after pygame.init()/pygame.mixer.init()/pygame.font.init() h
 import pygame
 import tensorflow as tf
 
+from .sounds import Sounds
+
 
 class Fonts:
     def __init__(self):
@@ -18,5 +20,5 @@ class Fonts:
 class Assets:
     def __init__(self):
         self.fonts = Fonts()
-        self.x_place_sound = pygame.mixer.Sound("data/sounds/x_place.wav")
+        self.sounds = Sounds()
         self.model = tf.keras.models.load_model("data/model.keras")

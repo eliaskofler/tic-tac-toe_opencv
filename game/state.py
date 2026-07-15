@@ -20,6 +20,7 @@ class GameState:
         self.winner = None
         self.game_over = False
         self.game_over_time = None
+        self.last_countdown_tick = None  # last restart-countdown value a tick sound played for
 
         self.game_phase = "LEVEL_SELECT"  # "LEVEL_SELECT", "LEVEL_CONFIRM", or "PLAYING"
         self.bot_skill = config.LEVEL_SKILLS["mid"]

@@ -21,6 +21,15 @@ pygame.mixer.init()
 pygame.font.init()
 assets = Assets()
 
+
+def play_outcome_sound(outcome):
+    if outcome == "win":
+        assets.sounds.win.play()
+    elif outcome == "loss":
+        assets.sounds.lose.play()
+    elif outcome == "tie":
+        assets.sounds.tie.play()
+
 cap = cv2.VideoCapture(0)
 
 if not cap.isOpened():
@@ -64,7 +73,7 @@ with ConsoleResetListener() as console:
             cv2.putText(diagnostic_frame, f"CRITICAL ERROR: No Markers Detected", (15, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2, cv2.LINE_AA)
 
-        #cv2.imshow("Webcam Live Feed / ArUco Diagnostics", diagnostic_frame)
+        cv2.imshow("Webcam Live Feed / ArUco Diagnostics", diagnostic_frame)
 
         cv2.waitKey(1)
 
@@ -89,6 +98,7 @@ with ConsoleResetListener() as console:
         if M is not None:
             if not vision.homography_locked:
                 print("ArUco calibration locked: all 4 markers found.")
+                assets.sounds.calibration_locked.play()
                 vision.homography_locked = True
             vision.homography_matrix = M
 
@@ -168,10 +178,12 @@ with ConsoleResetListener() as console:
                             state.bot_skill = config.LEVEL_SKILLS[best_level]
                             state.current_level_label = best_level.upper()
                             print(f"Difficulty selected: {best_level.upper()} (BOT_SKILL={state.bot_skill:.2f})")
+                            assets.sounds.button_confirm.play()
                             flow.start_level_confirm(state, best_level)
                         else:
                             print("Difficulty scan failed: no zone matched confidently.")
                             state.status_msg = "Scan failed. Mark EASY, MID, or HARD with an X."
+                            #assets.sounds.error.play()
                 else:
                     state.status_msg = "Choose a difficulty: draw an X over EASY, MID, or HARD."
                     state.status_color = (0, 120, 0)
@@ -246,15 +258,16 @@ with ConsoleResetListener() as console:
                         if best_cell:
                             r, c = best_cell
                             flow.place_mark(state, r, c, "X")
-                            assets.x_place_sound.play()
+                            assets.sounds.x_place.play()
                             print(f"Player placed X at row {r}, col {c} (confidence {max_ink_density:.2f})")
-                            flow.check_game_status(state)
+                            play_outcome_sound(flow.check_game_status(state))
                             if not state.game_over:
                                 state.current_player = "O"
                                 state.bot_move_ready_time = time.time() + config.BOT_MOVE_DELAY
                         else:
                             print("Scan failed: no cell matched confidently as X.")
                             state.status_msg = "Scan failed. Bolder lines are required."
+                            #assets.sounds.error.play()
                 else:
                     if M is not None:
                         state.status_msg = "Your Turn: Draw your marker step."
@@ -277,8 +290,9 @@ with ConsoleResetListener() as console:
                 if move:
                     r, c = move
                     flow.place_mark(state, r, c, "O")
+                    assets.sounds.o_place.play()
                     print(f"Bot placed O at row {r}, col {c}" + (" (random opening move)" if opening_move else ""))
-                    flow.check_game_status(state)
+                    play_outcome_sound(flow.check_game_status(state))
                 state.current_player = "X"
                 state.bot_move_ready_time = None
 
@@ -289,6 +303,9 @@ with ConsoleResetListener() as console:
                 state.status_color = (100, 100, 100) if state.winner == "Tie" else ((0, 120, 0) if state.winner == "X" else (30, 100, 220))
             else:
                 remaining = max(0, config.RESTART_DELAY - int(since_game_over - config.REVEAL_DELAY))
+                if remaining != state.last_countdown_tick:
+                    assets.sounds.tick.play()
+                    state.last_countdown_tick = remaining
                 if state.winner == "Tie":
                     state.status_msg = f"Tie match! Restarting in {remaining}..."
                     state.status_color = (100, 100, 100)

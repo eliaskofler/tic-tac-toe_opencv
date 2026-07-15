@@ -13,20 +13,25 @@ from .rules import check_win_condition
 
 
 def check_game_status(state):
+    """Returns "win"/"loss"/"tie" if this move just ended the game, else None - so the
+    caller can react (e.g. play a sound) without duplicating the win-check logic."""
+    state.last_countdown_tick = None
     if check_win_condition(state.board, "X"):
         state.winner = "X"; state.game_over = True; state.game_over_time = time.time()
         state.stats["games"] += 1; state.stats["wins"] += 1
         print("Game over: X (player) wins!")
-        return
+        return "win"
     if check_win_condition(state.board, "O"):
         state.winner = "O"; state.game_over = True; state.game_over_time = time.time()
         state.stats["games"] += 1; state.stats["losses"] += 1
         print("Game over: O (bot) wins!")
-        return
+        return "loss"
     if all(state.board[r][c] != "" for r in range(3) for c in range(3)):
         state.winner = "Tie"; state.game_over = True; state.game_over_time = time.time()
         state.stats["games"] += 1; state.stats["ties"] += 1
         print("Game over: Tie.")
+        return "tie"
+    return None
 
 
 def place_mark(state, row, col, mark):
